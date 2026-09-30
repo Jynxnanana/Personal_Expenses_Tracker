@@ -166,7 +166,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           style: Theme.of(context).textTheme.headlineMedium,
         ),
         const SizedBox(height: 7),
-        const Text(
+        Text(
           'Add a few details and keep your spending in view.',
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -277,7 +277,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.calendar_today_outlined,
                           size: 19,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -292,7 +292,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             ),
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.keyboard_arrow_down_rounded,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -305,7 +305,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           ),
         ),
         const SizedBox(height: 15),
-        const Text(
+        Text(
           'Your entries are kept in memory for this app session.',
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
