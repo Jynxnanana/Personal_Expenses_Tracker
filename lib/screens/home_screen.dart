@@ -59,6 +59,44 @@ class HomeScreen extends StatelessWidget {
     final dayLabel = _dateLabel(DateTime.now());
 
     return Scaffold(
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 0,
+        onDestinationSelected: (index) {
+          switch (index) {
+            case 1:
+              onOpenHistory();
+              return;
+            case 2:
+              onViewSummary();
+              return;
+            case 3:
+              onOpenGoals();
+              return;
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long_rounded),
+            label: 'History',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart_rounded),
+            label: 'Reports',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.flag_outlined),
+            selectedIcon: Icon(Icons.flag_rounded),
+            label: 'Goals',
+          ),
+        ],
+      ),
       appBar: AppBar(
         toolbarHeight: 72,
         titleSpacing: 20,
