@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'models/expense.dart';
 import 'screens/add_expense_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/savings_goals_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/summary_screen.dart';
+import 'screens/transaction_history_screen.dart';
 import 'theme.dart';
 
 void main() {
@@ -19,10 +21,12 @@ class ExpenseMateApp extends StatefulWidget {
 }
 
 class _ExpenseMateAppState extends State<ExpenseMateApp> {
-  final List<Expense> _expenses = [];
+  final List<Expense> _transactions = [];
+  List<SavingsGoal> _goals = [];
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   ThemeMode _themeMode = ThemeMode.system;
+  double _monthlyBudget = 10000;
 
   void _setThemeMode(ThemeMode mode) {
     setState(() => _themeMode = mode);
@@ -39,39 +43,43 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
     );
   }
 
-  Future<void> _openExpenseForm([Expense? existing]) async {
-    final expense = await _navigatorKey.currentState!.push<Expense>(
+  Future<void> _openTransactionForm(
+    TransactionType type, [
+    Expense? existing,
+  ]) async {
+    final transaction = await _navigatorKey.currentState!.push<Expense>(
       MaterialPageRoute(
-        builder: (_) => AddExpenseScreen(initialExpense: existing),
+        builder: (_) =>
+            AddExpenseScreen(initialExpense: existing, initialType: type),
       ),
     );
-    if (expense != null && mounted) {
+    if (transaction != null && mounted) {
       setState(() {
         if (existing == null) {
-          _expenses.insert(0, expense);
+          _transactions.insert(0, transaction);
         } else {
-          final index = _expenses.indexOf(existing);
-          if (index != -1) _expenses[index] = expense;
+          final index = _transactions.indexOf(existing);
+          if (index != -1) _transactions[index] = transaction;
         }
       });
       _messengerKey.currentState?.showSnackBar(
         SnackBar(
           content: Text(
             existing == null
-                ? '${expense.title} added to your expenses.'
-                : '${expense.title} updated.',
+                ? '${transaction.title} added.'
+                : '${transaction.title} updated.',
           ),
         ),
       );
     }
   }
 
-  Future<void> _deleteExpense(Expense expense) async {
+  Future<void> _deleteTransaction(Expense transaction) async {
     final shouldDelete = await showDialog<bool>(
       context: _navigatorKey.currentContext!,
       builder: (context) => AlertDialog(
-        title: const Text('Delete expense?'),
-        content: Text('Remove “${expense.title}” from this session?'),
+        title: const Text('Delete transaction?'),
+        content: Text('Remove "${transaction.title}" from this session?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -85,9 +93,91 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
       ),
     );
     if (shouldDelete != true || !mounted) return;
-    setState(() => _expenses.remove(expense));
+    setState(() => _transactions.remove(transaction));
     _messengerKey.currentState?.showSnackBar(
-      SnackBar(content: Text('${expense.title} deleted.')),
+      SnackBar(content: Text('${transaction.title} deleted.')),
+    );
+  }
+
+  Future<void> _addRecurringOccurrence(Expense transaction) async {
+    setState(() {
+      _transactions.insert(
+        0,
+        Expense(
+          title: transaction.title,
+          category: transaction.category,
+          amount: transaction.amount,
+          date: DateTime.now(),
+          type: transaction.type,
+          paymentMethod: transaction.paymentMethod,
+          notes: transaction.notes,
+          isRecurring: true,
+        ),
+      );
+    });
+    _messengerKey.currentState?.showSnackBar(
+      SnackBar(content: Text('${transaction.title} added for this month.')),
+    );
+  }
+
+  Future<void> _editMonthlyBudget() async {
+    final controller = TextEditingController(
+      text: _monthlyBudget.toStringAsFixed(2),
+    );
+    final formKey = GlobalKey<FormState>();
+    final budget = await showDialog<double>(
+      context: _navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: const Text('Monthly budget'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Budget amount',
+              prefixText: '\u20B1  ',
+            ),
+            validator: (value) {
+              final amount = double.tryParse(value?.trim() ?? '');
+              return amount == null || !amount.isFinite || amount <= 0
+                  ? 'Enter a budget above zero.'
+                  : null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (!formKey.currentState!.validate()) return;
+              final value = double.parse(controller.text.trim());
+              Navigator.pop(context, value);
+            },
+            child: const Text('Save budget'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (budget != null && mounted) setState(() => _monthlyBudget = budget);
+  }
+
+  void _openHistory() {
+    _navigatorKey.currentState!.push<void>(
+      MaterialPageRoute(
+        builder: (_) => TransactionHistoryScreen(
+          transactions: _transactions,
+          onEdit: (transaction) =>
+              _openTransactionForm(transaction.type, transaction),
+          onDelete: _deleteTransaction,
+          onRepeat: _addRecurringOccurrence,
+        ),
+      ),
     );
   }
 
@@ -95,9 +185,23 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
     _navigatorKey.currentState!.push<void>(
       MaterialPageRoute(
         builder: (_) => SummaryScreen(
-          expenses: _expenses,
-          onEditExpense: (expense) => _openExpenseForm(expense),
-          onDeleteExpense: _deleteExpense,
+          expenses: _transactions,
+          monthlyBudget: _monthlyBudget,
+          onEditExpense: (transaction) =>
+              _openTransactionForm(transaction.type, transaction),
+          onDeleteExpense: _deleteTransaction,
+          onRepeatExpense: _addRecurringOccurrence,
+        ),
+      ),
+    );
+  }
+
+  void _openSavingsGoals() {
+    _navigatorKey.currentState!.push<void>(
+      MaterialPageRoute(
+        builder: (_) => SavingsGoalsScreen(
+          goals: _goals,
+          onGoalsChanged: (goals) => setState(() => _goals = goals),
         ),
       ),
     );
@@ -114,12 +218,19 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
       navigatorKey: _navigatorKey,
       scaffoldMessengerKey: _messengerKey,
       home: HomeScreen(
-        expenses: _expenses,
-        onAddExpense: _openExpenseForm,
-        onEditExpense: _openExpenseForm,
-        onDeleteExpense: _deleteExpense,
+        expenses: _transactions,
+        monthlyBudget: _monthlyBudget,
+        onAddExpense: () => _openTransactionForm(TransactionType.expense),
+        onAddIncome: () => _openTransactionForm(TransactionType.income),
+        onEditExpense: (transaction) =>
+            _openTransactionForm(transaction.type, transaction),
+        onDeleteExpense: _deleteTransaction,
         onViewSummary: _openSummary,
         onOpenSettings: _openSettings,
+        onOpenHistory: _openHistory,
+        onOpenGoals: _openSavingsGoals,
+        onEditBudget: _editMonthlyBudget,
+        onRepeatExpense: _addRecurringOccurrence,
       ),
     );
   }

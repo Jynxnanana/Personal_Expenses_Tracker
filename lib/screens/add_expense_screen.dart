@@ -5,9 +5,14 @@ import '../models/expense.dart';
 import '../theme.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key, this.initialExpense});
+  const AddExpenseScreen({
+    super.key,
+    this.initialExpense,
+    this.initialType = TransactionType.expense,
+  });
 
   final Expense? initialExpense;
+  final TransactionType initialType;
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -17,8 +22,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
+  final _notesController = TextEditingController();
   String? _category;
+  String _paymentMethod = 'Cash';
   DateTime _date = DateTime.now();
+  late TransactionType _type;
+  bool _isRecurring = false;
 
   bool get _isEditing => widget.initialExpense != null;
 
@@ -26,11 +35,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   void initState() {
     super.initState();
     final expense = widget.initialExpense;
+    _type = expense?.type ?? widget.initialType;
     if (expense != null) {
       _titleController.text = expense.title;
       _amountController.text = expense.amount.toStringAsFixed(2);
       _category = expense.category;
       _date = expense.date;
+      _paymentMethod = expense.paymentMethod;
+      _notesController.text = expense.notes;
+      _isRecurring = expense.isRecurring;
     }
   }
 
@@ -38,6 +51,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   void dispose() {
     _titleController.dispose();
     _amountController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -67,6 +81,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       category: _category!,
       amount: double.parse(_amountController.text.trim()),
       date: _date,
+      type: _type,
+      paymentMethod: _paymentMethod,
+      notes: _notesController.text.trim(),
+      isRecurring: _isRecurring,
     );
     Navigator.of(context).pop(expense);
   }
@@ -94,7 +112,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing ? 'Edit expense' : 'New expense',
+          _isEditing
+              ? 'Edit transaction'
+              : _type == TransactionType.income
+              ? 'Add income'
+              : 'Add expense',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
         leading: IconButton(
@@ -130,7 +152,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               onPressed: _saveExpense,
                               icon: const Icon(Icons.check_rounded),
                               label: Text(
-                                _isEditing ? 'Update expense' : 'Save expense',
+                                _isEditing
+                                    ? 'Update transaction'
+                                    : 'Save ${_type.name}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -162,16 +186,44 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Where did it go?',
+          _isEditing
+              ? 'Update the details'
+              : _type == TransactionType.income
+              ? 'Add to your income'
+              : 'Where did it go?',
           style: Theme.of(context).textTheme.headlineMedium,
         ),
         const SizedBox(height: 7),
         Text(
-          'Add a few details and keep your spending in view.',
+          _type == TransactionType.income
+              ? 'Record allowance, salary, or other money received.'
+              : 'Add a few details and keep your spending in view.',
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 14,
           ),
+        ),
+        const SizedBox(height: 20),
+        SegmentedButton<TransactionType>(
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(
+              value: TransactionType.expense,
+              icon: Icon(Icons.north_east_rounded),
+              label: Text('Expense'),
+            ),
+            ButtonSegment(
+              value: TransactionType.income,
+              icon: Icon(Icons.south_west_rounded),
+              label: Text('Income'),
+            ),
+          ],
+          selected: {_type},
+          onSelectionChanged: (selection) => setState(() {
+            _type = selection.first;
+            _category = null;
+            _isRecurring = false;
+          }),
         ),
         const SizedBox(height: 26),
         Form(
@@ -179,20 +231,24 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _fieldLabel('Expense name'),
+              _fieldLabel(
+                _type == TransactionType.income ? 'Income name' : 'Description',
+              ),
               TextFormField(
                 controller: _titleController,
                 textCapitalization: TextCapitalization.sentences,
                 textInputAction: TextInputAction.next,
                 maxLength: 45,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. Lunch with friends',
+                decoration: InputDecoration(
+                  hintText: _type == TransactionType.income
+                      ? 'e.g. Allowance'
+                      : 'e.g. Lunch with friends',
                   prefixIcon: Icon(Icons.edit_note_rounded),
                   counterText: '',
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Enter an expense name.';
+                    return 'Enter a name.';
                   }
                   if (value.trim().length < 2) {
                     return 'Use at least 2 characters.';
@@ -213,7 +269,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 textInputAction: TextInputAction.done,
                 decoration: const InputDecoration(
                   hintText: '0.00',
-                  prefixText: '₱  ',
+                  prefixText: '\u20B1  ',
                   prefixIcon: Icon(Icons.payments_outlined),
                 ),
                 validator: (value) {
@@ -239,7 +295,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ),
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
                 items: [
-                  for (final category in ExpenseCategory.all)
+                  for (final category in ExpenseCategory.forType(_type))
                     DropdownMenuItem(
                       value: category.name,
                       child: Row(
@@ -253,7 +309,32 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ],
                 onChanged: (value) => setState(() => _category = value),
                 validator: (value) =>
-                    value == null ? 'Choose an expense category.' : null,
+                    value == null ? 'Choose a category.' : null,
+              ),
+              const SizedBox(height: 19),
+              _fieldLabel('Payment method'),
+              DropdownButtonFormField<String>(
+                initialValue: _paymentMethod,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'Cash', child: Text('Cash')),
+                  DropdownMenuItem(value: 'GCash', child: Text('GCash')),
+                  DropdownMenuItem(
+                    value: 'Bank transfer',
+                    child: Text('Bank transfer'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Card',
+                    child: Text('Debit / credit card'),
+                  ),
+                  DropdownMenuItem(value: 'Other', child: Text('Other')),
+                ],
+                onChanged: (value) {
+                  if (value != null) setState(() => _paymentMethod = value);
+                },
               ),
               const SizedBox(height: 19),
               _fieldLabel('Date'),
@@ -301,6 +382,27 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 19),
+              _fieldLabel('Notes (optional)'),
+              TextField(
+                controller: _notesController,
+                maxLines: 2,
+                maxLength: 100,
+                decoration: const InputDecoration(
+                  hintText: 'Add a note',
+                  prefixIcon: Icon(Icons.notes_rounded),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              if (_type == TransactionType.expense)
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: _isRecurring,
+                  onChanged: (value) => setState(() => _isRecurring = value),
+                  title: const Text('Recurring monthly'),
+                  subtitle: const Text('Mark regular bills and subscriptions.'),
+                  secondary: const Icon(Icons.repeat_rounded),
+                ),
             ],
           ),
         ),

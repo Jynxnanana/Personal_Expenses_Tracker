@@ -85,12 +85,14 @@ class ExpenseRow extends StatelessWidget {
     required this.expense,
     required this.onEdit,
     required this.onDelete,
+    this.onRepeat,
     this.showDate = true,
   });
 
   final Expense expense;
   final Future<void> Function(Expense expense) onEdit;
   final Future<void> Function(Expense expense) onDelete;
+  final Future<void> Function(Expense expense)? onRepeat;
   final bool showDate;
 
   @override
@@ -119,7 +121,7 @@ class ExpenseRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   showDate
-                      ? '${expense.category}  ·  ${_formatDate(expense.date)}'
+                      ? '${expense.category}  ·  ${expense.paymentMethod}  ·  ${_formatDate(expense.date)}${expense.isRecurring ? '  ·  Monthly' : ''}'
                       : expense.category,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -133,9 +135,11 @@ class ExpenseRow extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            '−${formatPeso(expense.amount)}',
+            (expense.isIncome ? '+' : '−') + formatPeso(expense.amount),
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
+              color: expense.isIncome
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w700,
               fontSize: 14,
             ),
@@ -148,12 +152,16 @@ class ExpenseRow extends StatelessWidget {
             onSelected: (action) {
               if (action == 'edit') {
                 onEdit(expense);
-              } else {
+              } else if (action == 'repeat' && onRepeat != null) {
+                onRepeat!(expense);
+              } else if (action == 'delete') {
                 onDelete(expense);
+              } else {
+                return;
               }
             },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
+            itemBuilder: (context) => [
+              const PopupMenuItem(
                 value: 'edit',
                 child: ListTile(
                   leading: Icon(Icons.edit_outlined, size: 20),
@@ -162,7 +170,7 @@ class ExpenseRow extends StatelessWidget {
                   dense: true,
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
                   leading: Icon(Icons.delete_outline_rounded, size: 20),
@@ -171,6 +179,16 @@ class ExpenseRow extends StatelessWidget {
                   dense: true,
                 ),
               ),
+              if (expense.isRecurring && onRepeat != null)
+                const PopupMenuItem(
+                  value: 'repeat',
+                  child: ListTile(
+                    leading: Icon(Icons.repeat_rounded, size: 20),
+                    title: Text('Add monthly occurrence'),
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                  ),
+                ),
             ],
             icon: const Icon(Icons.more_vert_rounded),
           ),

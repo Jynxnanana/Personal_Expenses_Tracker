@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/expense.dart';
@@ -8,13 +10,17 @@ class SummaryScreen extends StatefulWidget {
   const SummaryScreen({
     super.key,
     required this.expenses,
+    required this.monthlyBudget,
     required this.onEditExpense,
     required this.onDeleteExpense,
+    required this.onRepeatExpense,
   });
 
   final List<Expense> expenses;
+  final double monthlyBudget;
   final Future<void> Function(Expense expense) onEditExpense;
   final Future<void> Function(Expense expense) onDeleteExpense;
+  final Future<void> Function(Expense expense) onRepeatExpense;
 
   @override
   State<SummaryScreen> createState() => _SummaryScreenState();
@@ -34,13 +40,20 @@ class _SummaryScreenState extends State<SummaryScreen> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final monthly = widget.expenses
+    final monthTransactions = widget.expenses
         .where(
           (expense) =>
               expense.date.year == now.year && expense.date.month == now.month,
         )
         .toList();
+    final monthly = monthTransactions
+        .where((transaction) => !transaction.isIncome)
+        .toList();
+    final income = monthTransactions
+        .where((transaction) => transaction.isIncome)
+        .toList();
     final total = totalOf(monthly);
+    final totalIncome = totalOf(income);
     final groups = {
       for (final category in ExpenseCategory.all)
         category.name: totalOf(
@@ -92,7 +105,15 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     _SummaryHero(
                       month: month,
                       total: total,
+                      income: totalIncome,
                       count: monthly.length,
+                    ),
+                    const SizedBox(height: 16),
+                    _MonthlyReportCard(
+                      income: totalIncome,
+                      expenses: total,
+                      budget: widget.monthlyBudget,
+                      groups: groups,
                     ),
                     const SizedBox(height: 16),
                     if (wide)
@@ -119,7 +140,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                         horizontal: 17,
                         vertical: 4,
                       ),
-                      child: monthly.isEmpty
+                      child: monthTransactions.isEmpty
                           ? const EmptyExpenses(
                               message: 'No expenses recorded this month yet.',
                             )
@@ -127,15 +148,16 @@ class _SummaryScreenState extends State<SummaryScreen> {
                               children: [
                                 for (
                                   var index = 0;
-                                  index < monthly.length;
+                                  index < monthTransactions.length;
                                   index++
                                 ) ...[
                                   ExpenseRow(
-                                    expense: monthly[index],
+                                    expense: monthTransactions[index],
                                     onEdit: _editExpense,
                                     onDelete: _deleteExpense,
+                                    onRepeat: widget.onRepeatExpense,
                                   ),
-                                  if (index != monthly.length - 1)
+                                  if (index != monthTransactions.length - 1)
                                     const Divider(height: 1, indent: 59),
                                 ],
                               ],
@@ -181,11 +203,13 @@ class _SummaryHero extends StatelessWidget {
   const _SummaryHero({
     required this.month,
     required this.total,
+    required this.income,
     required this.count,
   });
 
   final String month;
   final double total;
+  final double income;
   final int count;
 
   @override
@@ -237,10 +261,194 @@ class _SummaryHero extends StatelessWidget {
             '$count ${count == 1 ? 'expense' : 'expenses'} recorded',
             style: const TextStyle(color: Color(0xFFD1E5D8), fontSize: 12),
           ),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              Expanded(
+                child: _ReportAmount(label: 'INCOME', amount: income),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _ReportAmount(
+                  label: 'NET SAVINGS',
+                  amount: income - total,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
+}
+
+class _ReportAmount extends StatelessWidget {
+  const _ReportAmount({required this.label, required this.amount});
+
+  final String label;
+  final double amount;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(
+          color: Color(0xFFD1E5D8),
+          fontSize: 9,
+          letterSpacing: .8,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      const SizedBox(height: 4),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          formatPeso(amount),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+class _MonthlyReportCard extends StatelessWidget {
+  const _MonthlyReportCard({
+    required this.income,
+    required this.expenses,
+    required this.budget,
+    required this.groups,
+  });
+
+  final double income;
+  final double expenses;
+  final double budget;
+  final Map<String, double> groups;
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = groups.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final progress = (expenses / budget).clamp(0.0, 1.0);
+    final colors = Theme.of(context).colorScheme;
+    return SurfaceCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Monthly report', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _ReportMetric(
+                  label: 'Income',
+                  value: formatPeso(income),
+                ),
+              ),
+              Expanded(
+                child: _ReportMetric(
+                  label: 'Expenses',
+                  value: formatPeso(expenses),
+                ),
+              ),
+              Expanded(
+                child: _ReportMetric(
+                  label: 'Savings',
+                  value: formatPeso(income - expenses),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 17),
+          Text(
+            'Budget: ${formatPeso(expenses)} / ${formatPeso(budget)}',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              minHeight: 7,
+              value: progress,
+              backgroundColor: colors.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation(
+                expenses > budget ? colors.error : colors.primary,
+              ),
+            ),
+          ),
+          if (sorted.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              'Highest: ${sorted.first.key} · ${formatPeso(sorted.first.value)}',
+              style: TextStyle(color: colors.onSurface, fontSize: 12),
+            ),
+            if (sorted.length > 1)
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Text(
+                  'Lowest: ${sorted.last.key} · ${formatPeso(sorted.last.value)}',
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ReportMetric extends StatelessWidget {
+  const _ReportMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: Theme.of(context).textTheme.bodySmall),
+      const SizedBox(height: 4),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(value, style: Theme.of(context).textTheme.titleMedium),
+      ),
+    ],
+  );
+}
+
+class _PieChartPainter extends CustomPainter {
+  const _PieChartPainter(this.values);
+
+  final List<(Color, double)> values;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final total = values.fold<double>(0, (sum, item) => sum + item.$2);
+    if (total <= 0) return;
+    final rect = Offset.zero & size;
+    var start = -math.pi / 2;
+    for (final (color, value) in values) {
+      final sweep = value / total * math.pi * 2;
+      canvas.drawArc(rect, start, sweep, true, Paint()..color = color);
+      start += sweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PieChartPainter oldDelegate) =>
+      oldDelegate.values != values;
 }
 
 class _WeeklySpendingCard extends StatelessWidget {
@@ -402,12 +610,22 @@ class _CategoryBreakdown extends StatelessWidget {
             const EmptyExpenses(
               message: 'Category totals appear after you add an expense.',
             )
-          else
+          else ...[
+            Center(
+              child: CustomPaint(
+                size: const Size.square(142),
+                painter: _PieChartPainter([
+                  for (final entry in sorted)
+                    (ExpenseCategory.byName(entry.key).color, entry.value),
+                ]),
+              ),
+            ),
             for (final entry in sorted)
               _CategorySummaryRow(
                 category: ExpenseCategory.byName(entry.key),
                 spent: entry.value,
               ),
+          ],
         ],
       ),
     );

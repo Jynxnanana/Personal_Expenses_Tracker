@@ -8,36 +8,54 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
     required this.expenses,
+    required this.monthlyBudget,
     required this.onAddExpense,
+    required this.onAddIncome,
     required this.onEditExpense,
     required this.onDeleteExpense,
+    required this.onRepeatExpense,
     required this.onViewSummary,
     required this.onOpenSettings,
+    required this.onOpenHistory,
+    required this.onOpenGoals,
+    required this.onEditBudget,
   });
 
   final List<Expense> expenses;
+  final double monthlyBudget;
   final VoidCallback onAddExpense;
+  final VoidCallback onAddIncome;
   final Future<void> Function(Expense expense) onEditExpense;
   final Future<void> Function(Expense expense) onDeleteExpense;
+  final Future<void> Function(Expense expense) onRepeatExpense;
   final VoidCallback onViewSummary;
   final VoidCallback onOpenSettings;
+  final VoidCallback onOpenHistory;
+  final VoidCallback onOpenGoals;
+  final VoidCallback onEditBudget;
 
   List<Expense> get _thisMonth => expenses.where((expense) {
     final now = DateTime.now();
     return expense.date.year == now.year && expense.date.month == now.month;
   }).toList();
 
-  List<Expense> get _thisWeek {
-    final cutoff = DateTime.now().subtract(const Duration(days: 7));
-    return expenses.where((expense) => expense.date.isAfter(cutoff)).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final monthExpenses = _thisMonth;
+    final monthTransactions = _thisMonth;
+    final monthExpenses = monthTransactions
+        .where((transaction) => !transaction.isIncome)
+        .toList();
+    final monthIncome = monthTransactions
+        .where((transaction) => transaction.isIncome)
+        .toList();
     final monthTotal = totalOf(monthExpenses);
-    final recent = expenses;
-    final monthName = _monthName(DateTime.now().month);
+    final allIncome = totalOf(
+      expenses.where((transaction) => transaction.isIncome),
+    );
+    final allExpenses = totalOf(
+      expenses.where((transaction) => !transaction.isIncome),
+    );
+    final recent = expenses.take(5).toList();
     final dayLabel = _dateLabel(DateTime.now());
 
     return Scaffold(
@@ -94,15 +112,55 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: onAddExpense,
-        backgroundColor: ExpenseMateColors.forest,
-        foregroundColor: Colors.white,
-        elevation: 3,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'Add expense',
-          style: TextStyle(fontWeight: FontWeight.w700),
+      floatingActionButton: PopupMenuButton<TransactionType>(
+        tooltip: 'Add transaction',
+        onSelected: (type) =>
+            type == TransactionType.income ? onAddIncome() : onAddExpense(),
+        itemBuilder: (context) => const [
+          PopupMenuItem(
+            value: TransactionType.expense,
+            child: ListTile(
+              leading: Icon(Icons.north_east_rounded),
+              title: Text('Add expense'),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+          PopupMenuItem(
+            value: TransactionType.income,
+            child: ListTile(
+              leading: Icon(Icons.south_west_rounded),
+              title: Text('Add income'),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        ],
+        child: Container(
+          decoration: BoxDecoration(
+            color: ExpenseMateColors.forest,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x24114E40),
+                blurRadius: 12,
+                offset: Offset(0, 5),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, color: Colors.white),
+              SizedBox(width: 8),
+              Text(
+                'Add transaction',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       body: LayoutBuilder(
@@ -137,15 +195,19 @@ class HomeScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 19),
-                  _MonthlySpendCard(total: monthTotal, monthName: monthName),
+                  _MonthlySpendCard(
+                    balance: allIncome - allExpenses,
+                    income: allIncome,
+                    expenses: allExpenses,
+                  ),
                   const SizedBox(height: 15),
                   Row(
                     children: [
                       Expanded(
                         child: _QuickStatCard(
                           icon: Icons.calendar_view_week_rounded,
-                          label: 'This week',
-                          value: formatPeso(totalOf(_thisWeek)),
+                          label: 'Income this month',
+                          value: formatPeso(totalOf(monthIncome)),
                           tint: Theme.of(context)
                               .colorScheme
                               .secondaryContainer,
@@ -155,12 +217,27 @@ class HomeScreen extends StatelessWidget {
                       Expanded(
                         child: _QuickStatCard(
                           icon: Icons.receipt_outlined,
-                          label: 'Transactions',
-                          value: '${monthExpenses.length}',
+                          label: 'Expenses this month',
+                          value: formatPeso(monthTotal),
                           tint: Theme.of(context).colorScheme.tertiaryContainer,
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 15),
+                  _MonthlyBudgetCard(
+                    spent: monthTotal,
+                    budget: monthlyBudget,
+                    onEdit: onEditBudget,
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: OutlinedButton.icon(
+                      onPressed: onOpenGoals,
+                      icon: const Icon(Icons.flag_outlined),
+                      label: const Text('Savings goals'),
+                    ),
                   ),
                   const SizedBox(height: 30),
                   SectionHeading(
@@ -175,7 +252,11 @@ class HomeScreen extends StatelessWidget {
                     onTap: onViewSummary,
                   ),
                   const SizedBox(height: 28),
-                  SectionHeading(title: 'Your expenses'),
+                  SectionHeading(
+                    title: 'Recent transactions',
+                    actionLabel: 'View all',
+                    onAction: onOpenHistory,
+                  ),
                   const SizedBox(height: 9),
                   SurfaceCard(
                     padding: const EdgeInsets.symmetric(
@@ -184,7 +265,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     child: recent.isEmpty
                         ? EmptyExpenses(
-                            message: 'No expenses yet. Add one to get started.',
+                            message: 'No transactions yet. Add income or an expense.',
                           )
                         : Column(
                             children: [
@@ -197,6 +278,7 @@ class HomeScreen extends StatelessWidget {
                                   expense: recent[index],
                                   onEdit: onEditExpense,
                                   onDelete: onDeleteExpense,
+                                  onRepeat: onRepeatExpense,
                                 ),
                                 if (index != recent.length - 1)
                                   const Divider(height: 1, indent: 59),
@@ -214,21 +296,6 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-
-  static String _monthName(int month) => const [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ][month - 1];
 
   static String _dateLabel(DateTime date) {
     const weekdays = [
@@ -259,15 +326,20 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _MonthlySpendCard extends StatelessWidget {
-  const _MonthlySpendCard({required this.total, required this.monthName});
+  const _MonthlySpendCard({
+    required this.balance,
+    required this.income,
+    required this.expenses,
+  });
 
-  final double total;
-  final String monthName;
+  final double balance;
+  final double income;
+  final double expenses;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 188),
+      constraints: const BoxConstraints(minHeight: 220),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [ExpenseMateColors.forest, Color(0xFF17473C)],
@@ -308,14 +380,14 @@ class _MonthlySpendCard extends StatelessWidget {
                 Row(
                   children: [
                     const Icon(
-                      Icons.south_west_rounded,
+                      Icons.account_balance_wallet_rounded,
                       color: ExpenseMateColors.lime,
                       size: 17,
                     ),
                     const SizedBox(width: 7),
                     Expanded(
                       child: Text(
-                        'TOTAL SPENT - $monthName',
+                        'CURRENT BALANCE  ·  THIS SESSION',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -333,7 +405,7 @@ class _MonthlySpendCard extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    formatPeso(total),
+                    formatPeso(balance),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 37,
@@ -342,12 +414,124 @@ class _MonthlySpendCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'A little clarity goes a long way.',
-                  style: TextStyle(color: Color(0xFFC8DDD0), fontSize: 13),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _HeroAmount(label: 'INCOME', amount: income),
+                    ),
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: _HeroAmount(label: 'EXPENSES', amount: expenses),
+                    ),
+                  ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroAmount extends StatelessWidget {
+  const _HeroAmount({required this.label, required this.amount});
+
+  final String label;
+  final double amount;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(
+          color: Color(0xFFD1E5D8),
+          fontSize: 9,
+          letterSpacing: .8,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      const SizedBox(height: 4),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          formatPeso(amount),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+class _MonthlyBudgetCard extends StatelessWidget {
+  const _MonthlyBudgetCard({
+    required this.spent,
+    required this.budget,
+    required this.onEdit,
+  });
+
+  final double spent;
+  final double budget;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final remaining = (budget - spent).clamp(0, double.infinity).toDouble();
+    final progress = (spent / budget).clamp(0.0, 1.0);
+    final colors = Theme.of(context).colorScheme;
+    return SurfaceCard(
+      padding: const EdgeInsets.all(17),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Monthly budget',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 17),
+                label: const Text('Set limit'),
+              ),
+            ],
+          ),
+          Text(
+            '${formatPeso(spent)} of ${formatPeso(budget)} used',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              minHeight: 9,
+              value: progress,
+              backgroundColor: colors.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation(
+                spent > budget ? colors.error : colors.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            spent > budget
+                ? '${formatPeso(spent - budget)} over budget'
+                : '${formatPeso(remaining)} remaining',
+            style: TextStyle(
+              color: spent > budget ? colors.error : colors.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
           ),
         ],

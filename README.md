@@ -2,25 +2,27 @@
 
 ## Project description
 
-CHCCI ExpenseMate is a Flutter personal expense tracker for the CSE101 final project. Users can add, view, edit, and delete daily expenses, then review current-month and weekly totals.
+CHCCI ExpenseMate is a Flutter personal finance tracker for the CSE101 final project. Users can record income and expenses, manage a monthly budget and savings goals, and review searchable transaction history and spending reports.
 
 Expense records are held in a Dart `List` in memory only. The app starts empty, uses no database, and clears all entries when it closes.
 
 ## Features
 
-- Empty first launch with live monthly and weekly spending totals.
-- Create expenses with a name, positive amount, category, and date.
-- Read all current-month expenses in Home and Summary.
-- Edit existing expense details.
-- Delete an expense after confirmation.
-- Category totals, category budgets, and a seven-day spending chart.
-- Navigation and responsive phone and wide-screen layouts.
-- System, light, and dark appearance options in Settings.
+- Record income and expenses with amount, category, date, payment method, and optional notes.
+- Review current balance, income, expenses, and monthly budget progress on the dashboard.
+- Search and filter transaction history by type, category, date, and text.
+- Edit or delete transactions.
+- View monthly income, spending, savings, highest and lowest categories, a pie chart, and a seven-day spending chart.
+- Create savings goals and record contributions.
+- Mark regular expenses as recurring and manually add a monthly occurrence.
+- Navigate between the dashboard, transaction form, history, summary, savings goals, and settings.
+- Responsive phone and wide-screen layouts; System, Light, and Dark appearance options.
+- All records stay in runtime memory and clear when the app closes. No database or extra package is used.
 - Philippine peso amounts and locally bundled artwork.
 
 ## Screenshots
 
-The empty-start Home screenshot is in `screenshots/home.png`. Capture the New Expense, Summary, and wide-screen views from the running app for the final screenshot set.
+Capture the Home, Add Transaction, Summary, and wide-screen views from the running app for the final screenshot set.
 
 ## Run and build
 
