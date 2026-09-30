@@ -110,8 +110,8 @@ class ExpenseRow extends StatelessWidget {
                   expense.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: ExpenseMateColors.ink,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -123,8 +123,8 @@ class ExpenseRow extends StatelessWidget {
                       : expense.category,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: ExpenseMateColors.muted,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -134,8 +134,8 @@ class ExpenseRow extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '−${formatPeso(expense.amount)}',
-            style: const TextStyle(
-              color: ExpenseMateColors.ink,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w700,
               fontSize: 14,
             ),
@@ -226,11 +226,14 @@ class SurfaceCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       elevation: 2,
       shadowColor: const Color(0x140E2F24),
-      color: ExpenseMateColors.white,
+      color: Theme.of(context).colorScheme.surface,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(22),
-        side: BorderSide(color: ExpenseMateColors.line.withValues(alpha: .7)),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant
+              .withValues(alpha: .7),
+        ),
       ),
       child: Padding(padding: padding, child: child),
     );
@@ -251,10 +254,10 @@ class EmptyExpenses extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 30),
       child: Column(
         children: [
-          const Icon(
+          Icon(
             Icons.receipt_long_rounded,
             size: 34,
-            color: ExpenseMateColors.muted,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 10),
           Text(message, style: Theme.of(context).textTheme.bodyMedium),

@@ -60,14 +60,14 @@ class _SummaryScreenState extends State<SummaryScreen> {
           onPressed: () => Navigator.of(context).maybePop(),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 22),
+            padding: const EdgeInsets.only(right: 22),
             child: Center(
               child: Text(
                 'THIS MONTH',
                 style: TextStyle(
-                  color: ExpenseMateColors.muted,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.0,
@@ -142,11 +142,11 @@ class _SummaryScreenState extends State<SummaryScreen> {
                             ),
                     ),
                     const SizedBox(height: 18),
-                    const Center(
+                    Center(
                       child: Text(
                         'CHCCI ExpenseMate  ·  Entries last until the app is closed',
                         style: TextStyle(
-                          color: ExpenseMateColors.muted,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 11,
                         ),
                       ),
@@ -276,18 +276,21 @@ class _WeeklySpendingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Last 7 days',
             style: TextStyle(
-              color: ExpenseMateColors.ink,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w700,
               fontSize: 15,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'A simple look at your daily spending',
-            style: TextStyle(color: ExpenseMateColors.muted, fontSize: 11),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 11,
+            ),
           ),
           const SizedBox(height: 18),
           SizedBox(
@@ -307,8 +310,10 @@ class _WeeklySpendingCard extends StatelessWidget {
                               fit: BoxFit.scaleDown,
                               child: Text(
                                 formatPeso(values[index]),
-                                style: const TextStyle(
-                                  color: ExpenseMateColors.muted,
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                   fontSize: 9,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -324,8 +329,10 @@ class _WeeklySpendingCard extends StatelessWidget {
                                 : 8 + (values[index] / peak * 51),
                             decoration: BoxDecoration(
                               color: index == 6
-                                  ? ExpenseMateColors.forest
-                                  : const Color(0xFFCFE5D8),
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context)
+                                        .colorScheme
+                                        .secondaryContainer,
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
@@ -334,8 +341,10 @@ class _WeeklySpendingCard extends StatelessWidget {
                             weekdayLetters[days[index].weekday - 1],
                             style: TextStyle(
                               color: index == 6
-                                  ? ExpenseMateColors.forest
-                                  : ExpenseMateColors.muted,
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
                               fontSize: 10,
                               fontWeight: index == 6
                                   ? FontWeight.w700
@@ -372,18 +381,21 @@ class _CategoryBreakdown extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'By category',
             style: TextStyle(
-              color: ExpenseMateColors.ink,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w700,
               fontSize: 15,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Monthly budget used',
-            style: TextStyle(color: ExpenseMateColors.muted, fontSize: 11),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 11,
+            ),
           ),
           const SizedBox(height: 12),
           if (sorted.isEmpty)
@@ -425,8 +437,8 @@ class _CategorySummaryRow extends StatelessWidget {
                   children: [
                     Text(
                       category.name,
-                      style: const TextStyle(
-                        color: ExpenseMateColors.ink,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -434,8 +446,8 @@ class _CategorySummaryRow extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       '${formatPeso(spent)} of ${formatPeso(category.monthlyBudget)}',
-                      style: const TextStyle(
-                        color: ExpenseMateColors.muted,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 10,
                       ),
                     ),
@@ -445,8 +457,8 @@ class _CategorySummaryRow extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 '${(progress * 100).round()}%',
-                style: const TextStyle(
-                  color: ExpenseMateColors.ink,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
@@ -459,7 +471,9 @@ class _CategorySummaryRow extends StatelessWidget {
             child: LinearProgressIndicator(
               minHeight: 5,
               value: progress,
-              backgroundColor: const Color(0xFFEFF1EE),
+              backgroundColor: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation(category.color),
             ),
           ),

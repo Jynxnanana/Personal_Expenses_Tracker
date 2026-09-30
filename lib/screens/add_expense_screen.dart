@@ -130,16 +130,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               onPressed: _saveExpense,
                               icon: const Icon(Icons.check_rounded),
                               label: Text(
-                                _isEditing
-                                    ? 'Update expense'
-                                    : 'Save expense',
+                                _isEditing ? 'Update expense' : 'Save expense',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                               style: FilledButton.styleFrom(
                                 backgroundColor: ExpenseMateColors.forest,
-                                foregroundColor: ExpenseMateColors.white,
+                                foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -170,7 +168,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         const SizedBox(height: 7),
         const Text(
           'Add a few details and keep your spending in view.',
-          style: TextStyle(color: ExpenseMateColors.muted, fontSize: 14),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 14,
+          ),
         ),
         const SizedBox(height: 26),
         Form(
@@ -257,7 +258,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               const SizedBox(height: 19),
               _fieldLabel('Date'),
               Material(
-                color: ExpenseMateColors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(15),
                 child: InkWell(
                   onTap: _chooseDate,
@@ -269,7 +270,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       vertical: 17,
                     ),
                     decoration: BoxDecoration(
-                      border: Border.all(color: ExpenseMateColors.line),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Row(
@@ -277,21 +280,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         const Icon(
                           Icons.calendar_today_outlined,
                           size: 19,
-                          color: ExpenseMateColors.muted,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _prettyDate(_date),
-                            style: const TextStyle(
-                              color: ExpenseMateColors.ink,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 14,
                             ),
                           ),
                         ),
                         const Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: ExpenseMateColors.muted,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ],
                     ),
@@ -304,7 +307,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         const SizedBox(height: 15),
         const Text(
           'Your entries are kept in memory for this app session.',
-          style: TextStyle(color: ExpenseMateColors.muted, fontSize: 11),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 11,
+          ),
         ),
       ],
     );
@@ -314,8 +320,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     padding: const EdgeInsets.only(bottom: 8),
     child: Text(
       label,
-      style: const TextStyle(
-        color: ExpenseMateColors.ink,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
         fontWeight: FontWeight.w600,
         fontSize: 13,
       ),

@@ -15,6 +15,7 @@ Expense records are held in a Dart `List` in memory only. The app starts empty, 
 - Delete an expense after confirmation.
 - Category totals, category budgets, and a seven-day spending chart.
 - Navigation and responsive phone and wide-screen layouts.
+- System, light, and dark appearance options in Settings.
 - Philippine peso amounts and locally bundled artwork.
 
 ## Screenshots

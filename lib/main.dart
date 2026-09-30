@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'models/expense.dart';
 import 'screens/add_expense_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/settings_screen.dart';
 import 'screens/summary_screen.dart';
 import 'theme.dart';
 
@@ -21,6 +22,22 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
   final List<Expense> _expenses = [];
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+  ThemeMode _themeMode = ThemeMode.system;
+
+  void _setThemeMode(ThemeMode mode) {
+    setState(() => _themeMode = mode);
+  }
+
+  void _openSettings() {
+    _navigatorKey.currentState!.push<void>(
+      MaterialPageRoute(
+        builder: (_) => SettingsScreen(
+          selectedTheme: _themeMode,
+          onThemeChanged: _setThemeMode,
+        ),
+      ),
+    );
+  }
 
   Future<void> _openExpenseForm([Expense? existing]) async {
     final expense = await _navigatorKey.currentState!.push<Expense>(
@@ -44,7 +61,6 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
                 ? '${expense.title} added to your expenses.'
                 : '${expense.title} updated.',
           ),
-          backgroundColor: ExpenseMateColors.ink,
         ),
       );
     }
@@ -93,6 +109,8 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
       title: 'CHCCI ExpenseMate',
       debugShowCheckedModeBanner: false,
       theme: ExpenseMateTheme.theme,
+      darkTheme: ExpenseMateTheme.darkTheme,
+      themeMode: _themeMode,
       navigatorKey: _navigatorKey,
       scaffoldMessengerKey: _messengerKey,
       home: HomeScreen(
@@ -101,6 +119,7 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
         onEditExpense: _openExpenseForm,
         onDeleteExpense: _deleteExpense,
         onViewSummary: _openSummary,
+        onOpenSettings: _openSettings,
       ),
     );
   }

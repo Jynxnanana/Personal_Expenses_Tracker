@@ -12,6 +12,7 @@ class HomeScreen extends StatelessWidget {
     required this.onEditExpense,
     required this.onDeleteExpense,
     required this.onViewSummary,
+    required this.onOpenSettings,
   });
 
   final List<Expense> expenses;
@@ -19,6 +20,7 @@ class HomeScreen extends StatelessWidget {
   final Future<void> Function(Expense expense) onEditExpense;
   final Future<void> Function(Expense expense) onDeleteExpense;
   final VoidCallback onViewSummary;
+  final VoidCallback onOpenSettings;
 
   List<Expense> get _thisMonth => expenses.where((expense) {
     final now = DateTime.now();
@@ -42,7 +44,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         toolbarHeight: 72,
         titleSpacing: 20,
-        title: const Row(
+        title: Row(
           children: [
             BrandMark(),
             SizedBox(width: 11),
@@ -53,7 +55,7 @@ class HomeScreen extends StatelessWidget {
                 Text(
                   'CHCCI',
                   style: TextStyle(
-                    color: ExpenseMateColors.ink,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     letterSpacing: .4,
@@ -62,7 +64,7 @@ class HomeScreen extends StatelessWidget {
                 Text(
                   'ExpenseMate',
                   style: TextStyle(
-                    color: ExpenseMateColors.muted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -72,14 +74,19 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Settings',
+            onPressed: onOpenSettings,
+            icon: const Icon(Icons.settings_outlined),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: IconButton.filledTonal(
               tooltip: 'View spending summary',
               onPressed: onViewSummary,
               style: IconButton.styleFrom(
-                backgroundColor: ExpenseMateColors.white,
-                foregroundColor: ExpenseMateColors.ink,
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
                 fixedSize: const Size(44, 44),
               ),
               icon: const Icon(Icons.bar_chart_rounded),
@@ -90,7 +97,7 @@ class HomeScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: onAddExpense,
         backgroundColor: ExpenseMateColors.forest,
-        foregroundColor: ExpenseMateColors.white,
+        foregroundColor: Colors.white,
         elevation: 3,
         icon: const Icon(Icons.add_rounded),
         label: const Text(
@@ -117,8 +124,8 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   Text(
                     dayLabel.toUpperCase(),
-                    style: const TextStyle(
-                      color: ExpenseMateColors.muted,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.15,
@@ -139,7 +146,9 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.calendar_view_week_rounded,
                           label: 'This week',
                           value: formatPeso(totalOf(_thisWeek)),
-                          tint: ExpenseMateColors.mint,
+                          tint: Theme.of(context)
+                              .colorScheme
+                              .secondaryContainer,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -148,7 +157,7 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.receipt_outlined,
                           label: 'Transactions',
                           value: '${monthExpenses.length}',
-                          tint: const Color(0xFFF4EFE2),
+                          tint: Theme.of(context).colorScheme.tertiaryContainer,
                         ),
                       ),
                     ],
@@ -373,13 +382,17 @@ class _QuickStatCard extends StatelessWidget {
               color: tint,
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(icon, color: ExpenseMateColors.forest, size: 18),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.onSurface,
+              size: 18,
+            ),
           ),
           const SizedBox(height: 14),
           Text(
             label,
-            style: const TextStyle(
-              color: ExpenseMateColors.muted,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
             ),
           ),
@@ -389,8 +402,8 @@ class _QuickStatCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               value,
-              style: const TextStyle(
-                color: ExpenseMateColors.ink,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
               ),
@@ -450,7 +463,7 @@ class _CategoryGrid extends StatelessWidget {
         final spent = rows[index].spent;
         final progress = (spent / category.monthlyBudget).clamp(0.0, 1.0);
         return Material(
-          color: ExpenseMateColors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(19),
           child: InkWell(
             onTap: onTap,
@@ -459,7 +472,9 @@ class _CategoryGrid extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(19),
-                border: Border.all(color: ExpenseMateColors.line),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,8 +485,8 @@ class _CategoryGrid extends StatelessWidget {
                       const Spacer(),
                       Text(
                         '${(progress * 100).round()}%',
-                        style: const TextStyle(
-                          color: ExpenseMateColors.muted,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -483,16 +498,16 @@ class _CategoryGrid extends StatelessWidget {
                     category.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: ExpenseMateColors.muted,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 11,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     formatPeso(spent),
-                    style: const TextStyle(
-                      color: ExpenseMateColors.ink,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
                     ),
@@ -513,14 +528,14 @@ class _TipCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFE9F2E9),
+        color: Theme.of(context).colorScheme.secondaryContainer,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(
             Icons.lightbulb_outline_rounded,
-            color: ExpenseMateColors.forest,
+            color: Theme.of(context).colorScheme.onSecondaryContainer,
             size: 21,
           ),
           SizedBox(width: 12),
@@ -528,7 +543,7 @@ class _TipCard extends StatelessWidget {
             child: Text(
               'Small check-ins today make bigger money goals easier tomorrow.',
               style: TextStyle(
-                color: ExpenseMateColors.ink,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
                 height: 1.45,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
