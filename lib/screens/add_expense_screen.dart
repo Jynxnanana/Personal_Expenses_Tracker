@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../models/expense.dart';
 import '../theme.dart';
-import '../widgets/expense_widgets.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key, this.initialExpense});
@@ -106,22 +105,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 760;
           final horizontal = constraints.maxWidth < 400 ? 18.0 : 28.0;
-          final form = _buildForm(context);
-          final content = wide
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 6, child: form),
-                    const SizedBox(width: 32),
-                    Expanded(flex: 4, child: _formAside()),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [form, const SizedBox(height: 20), _formAside()],
-                );
           // A ListView gives the form a real viewport to scroll within. Keeping
           // the content as its first item also prevents short screens from
           // centering the form below the visible area.
@@ -130,11 +114,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             children: [
               Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1020),
+                  constraints: const BoxConstraints(maxWidth: 680),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      content,
+                      _buildForm(context),
                       const SizedBox(height: 24),
                       Center(
                         child: ConstrainedBox(
@@ -337,87 +321,4 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       ),
     ),
   );
-
-  Widget _formAside() {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(21),
-          decoration: BoxDecoration(
-            color: ExpenseMateColors.forest,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.spa_rounded, color: ExpenseMateColors.lime, size: 24),
-              SizedBox(height: 15),
-              Text(
-                'Build a habit, not a spreadsheet.',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                  height: 1.3,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'A quick note is all it takes to understand where your money goes.',
-                style: TextStyle(
-                  color: Color(0xFFD1E5D8),
-                  fontSize: 13,
-                  height: 1.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        SurfaceCard(
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: ExpenseMateColors.mint,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.lock_outline_rounded,
-                  color: ExpenseMateColors.forest,
-                ),
-              ),
-              const SizedBox(width: 13),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Just for this session',
-                      style: TextStyle(
-                        color: ExpenseMateColors.ink,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Your expenses stay in memory until the app is closed.',
-                      style: TextStyle(
-                        color: ExpenseMateColors.muted,
-                        fontSize: 11,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 }
