@@ -35,6 +35,10 @@ flutter build apk --release
 
 The Android APK is generated at `build/app/outputs/flutter-apk/app-release.apk` when an Android SDK is installed and configured.
 
+## Download the Android APK
+
+The [Android APK workflow](https://github.com/Jynxnanana/Personal_Expenses_Tracker/actions/workflows/build-android-apk.yml) builds a release APK after changes are pushed to `main`. Open the newest successful run and download the `CHCCI-ExpenseMate-Android-APK` artifact. Extract the ZIP and install the APK on your Android phone. GitHub keeps workflow artifacts for 14 days.
+
 ## Demo flow
 
 Open Home, add an expense, and confirm that the totals update. Use the three-dot menu on an expense to edit or delete it. Open the chart icon to review the Summary.

@@ -32,115 +32,19 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
   }
 
   Future<void> _addGoal(BuildContext context) async {
-    final nameController = TextEditingController();
-    final targetController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
     final goal = await showDialog<SavingsGoal>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New savings goal'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: nameController,
-                autofocus: true,
-                decoration: const InputDecoration(labelText: 'Goal name'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter a goal name.'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: targetController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Target amount',
-                  prefixText: '\u20B1  ',
-                ),
-                validator: (value) {
-                  final amount = double.tryParse(value?.trim() ?? '');
-                  return amount == null || amount <= 0
-                      ? 'Enter an amount above zero.'
-                      : null;
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              Navigator.pop(
-                context,
-                SavingsGoal(
-                  title: nameController.text.trim(),
-                  target: double.parse(targetController.text.trim()),
-                ),
-              );
-            },
-            child: const Text('Create goal'),
-          ),
-        ],
-      ),
+      builder: (_) => const _NewSavingsGoalDialog(),
     );
-    nameController.dispose();
-    targetController.dispose();
-    if (goal != null) _updateGoals([..._goals, goal]);
+    if (goal != null && mounted) _updateGoals([..._goals, goal]);
   }
 
   Future<void> _addContribution(BuildContext context, int index) async {
-    final controller = TextEditingController();
-    final formKey = GlobalKey<FormState>();
     final amount = await showDialog<double>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add to ${_goals[index].title}'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Contribution',
-              prefixText: '\u20B1  ',
-            ),
-            validator: (value) {
-              final amount = double.tryParse(value?.trim() ?? '');
-              return amount == null || !amount.isFinite || amount <= 0
-                  ? 'Enter an amount above zero.'
-                  : null;
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              final value = double.parse(controller.text.trim());
-              Navigator.pop(context, value);
-            },
-            child: const Text('Add savings'),
-          ),
-        ],
-      ),
+      builder: (_) => _AddContributionDialog(goalTitle: _goals[index].title),
     );
-    controller.dispose();
-    if (amount == null) return;
+    if (amount == null || !mounted || index >= _goals.length) return;
     final next = [..._goals];
     next[index] = next[index].copyWith(saved: next[index].saved + amount);
     _updateGoals(next);
@@ -220,6 +124,141 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
               label: const Text('Create goal'),
             )
           : null,
+    );
+  }
+}
+
+class _NewSavingsGoalDialog extends StatefulWidget {
+  const _NewSavingsGoalDialog();
+
+  @override
+  State<_NewSavingsGoalDialog> createState() => _NewSavingsGoalDialogState();
+}
+
+class _NewSavingsGoalDialogState extends State<_NewSavingsGoalDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _targetController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _targetController.dispose();
+    super.dispose();
+  }
+
+  void _createGoal() {
+    if (!_formKey.currentState!.validate()) return;
+    Navigator.of(context).pop(
+      SavingsGoal(
+        title: _nameController.text.trim(),
+        target: double.parse(_targetController.text.trim()),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('New savings goal'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _nameController,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Goal name'),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Enter a goal name.'
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _targetController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Target amount',
+                prefixText: '\u20B1  ',
+              ),
+              validator: (value) {
+                final amount = double.tryParse(value?.trim() ?? '');
+                return amount == null || !amount.isFinite || amount <= 0
+                    ? 'Enter an amount above zero.'
+                    : null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _createGoal, child: const Text('Create goal')),
+      ],
+    );
+  }
+}
+
+class _AddContributionDialog extends StatefulWidget {
+  const _AddContributionDialog({required this.goalTitle});
+
+  final String goalTitle;
+
+  @override
+  State<_AddContributionDialog> createState() =>
+      _AddContributionDialogState();
+}
+
+class _AddContributionDialogState extends State<_AddContributionDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _addSavings() {
+    if (!_formKey.currentState!.validate()) return;
+    Navigator.of(context).pop(double.parse(_controller.text.trim()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Add to ${widget.goalTitle}'),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _controller,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Contribution',
+            prefixText: '\u20B1  ',
+          ),
+          validator: (value) {
+            final amount = double.tryParse(value?.trim() ?? '');
+            return amount == null || !amount.isFinite || amount <= 0
+                ? 'Enter an amount above zero.'
+                : null;
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _addSavings, child: const Text('Add savings')),
+      ],
     );
   }
 }
