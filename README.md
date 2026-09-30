@@ -32,16 +32,6 @@ flutter build apk --release
 
 The Android APK is generated at `build/app/outputs/flutter-apk/app-release.apk` when an Android SDK is installed and configured.
 
-## Group member roles
-
-Replace these placeholders with the group’s actual member names and contributions before submission.
-
-| Member | Role |
-| --- | --- |
-| Member 1 | UI and dashboard |
-| Member 2 | Expense form and validation |
-| Member 3 | Summary screen and documentation |
-
 ## Demo flow
 
 Open Home, add an expense, and confirm that the totals update. Use the three-dot menu on an expense to edit or delete it. Open the chart icon to review the Summary.
