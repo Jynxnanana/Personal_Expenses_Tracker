@@ -1,0 +1,542 @@
+import 'package:flutter/material.dart';
+
+import '../models/expense.dart';
+import '../theme.dart';
+import '../widgets/expense_widgets.dart';
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({
+    super.key,
+    required this.expenses,
+    required this.onAddExpense,
+    required this.onEditExpense,
+    required this.onDeleteExpense,
+    required this.onViewSummary,
+  });
+
+  final List<Expense> expenses;
+  final VoidCallback onAddExpense;
+  final Future<void> Function(Expense expense) onEditExpense;
+  final Future<void> Function(Expense expense) onDeleteExpense;
+  final VoidCallback onViewSummary;
+
+  List<Expense> get _thisMonth => expenses.where((expense) {
+    final now = DateTime.now();
+    return expense.date.year == now.year && expense.date.month == now.month;
+  }).toList();
+
+  List<Expense> get _thisWeek {
+    final cutoff = DateTime.now().subtract(const Duration(days: 7));
+    return expenses.where((expense) => expense.date.isAfter(cutoff)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final monthExpenses = _thisMonth;
+    final monthTotal = totalOf(monthExpenses);
+    final recent = expenses;
+    final monthName = _monthName(DateTime.now().month);
+    final dayLabel = _dateLabel(DateTime.now());
+
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 72,
+        titleSpacing: 20,
+        title: const Row(
+          children: [
+            BrandMark(),
+            SizedBox(width: 11),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'CHCCI',
+                  style: TextStyle(
+                    color: ExpenseMateColors.ink,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .4,
+                  ),
+                ),
+                Text(
+                  'ExpenseMate',
+                  style: TextStyle(
+                    color: ExpenseMateColors.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: IconButton.filledTonal(
+              tooltip: 'View spending summary',
+              onPressed: onViewSummary,
+              style: IconButton.styleFrom(
+                backgroundColor: ExpenseMateColors.white,
+                foregroundColor: ExpenseMateColors.ink,
+                fixedSize: const Size(44, 44),
+              ),
+              icon: const Icon(Icons.bar_chart_rounded),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: onAddExpense,
+        backgroundColor: ExpenseMateColors.forest,
+        foregroundColor: ExpenseMateColors.white,
+        elevation: 3,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text(
+          'Add expense',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final contentWidth = constraints.maxWidth;
+          final horizontalPadding = contentWidth < 400 ? 18.0 : 28.0;
+          final columns = contentWidth >= 850 ? 3 : 2;
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1120),
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  14,
+                  horizontalPadding,
+                  110,
+                ),
+                children: [
+                  Text(
+                    dayLabel.toUpperCase(),
+                    style: const TextStyle(
+                      color: ExpenseMateColors.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.15,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Your money, in view.',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 19),
+                  _MonthlySpendCard(total: monthTotal, monthName: monthName),
+                  const SizedBox(height: 15),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _QuickStatCard(
+                          icon: Icons.calendar_view_week_rounded,
+                          label: 'This week',
+                          value: formatPeso(totalOf(_thisWeek)),
+                          tint: ExpenseMateColors.mint,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _QuickStatCard(
+                          icon: Icons.receipt_outlined,
+                          label: 'Transactions',
+                          value: '${monthExpenses.length}',
+                          tint: const Color(0xFFF4EFE2),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+                  SectionHeading(
+                    title: 'Spending categories',
+                    actionLabel: 'See summary',
+                    onAction: onViewSummary,
+                  ),
+                  const SizedBox(height: 10),
+                  _CategoryGrid(
+                    expenses: monthExpenses,
+                    columns: columns,
+                    onTap: onViewSummary,
+                  ),
+                  const SizedBox(height: 28),
+                  SectionHeading(title: 'Your expenses'),
+                  const SizedBox(height: 9),
+                  SurfaceCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 17,
+                      vertical: 4,
+                    ),
+                    child: recent.isEmpty
+                        ? EmptyExpenses(
+                            message: 'No expenses yet. Add one to get started.',
+                          )
+                        : Column(
+                            children: [
+                              for (
+                                var index = 0;
+                                index < recent.length;
+                                index++
+                              ) ...[
+                                ExpenseRow(
+                                  expense: recent[index],
+                                  onEdit: onEditExpense,
+                                  onDelete: onDeleteExpense,
+                                ),
+                                if (index != recent.length - 1)
+                                  const Divider(height: 1, indent: 59),
+                              ],
+                            ],
+                          ),
+                  ),
+                  const SizedBox(height: 22),
+                  _TipCard(),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  static String _monthName(int month) => const [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ][month - 1];
+
+  static String _dateLabel(DateTime date) {
+    const weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
+  }
+}
+
+class _MonthlySpendCard extends StatelessWidget {
+  const _MonthlySpendCard({required this.total, required this.monthName});
+
+  final double total;
+  final String monthName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 188),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [ExpenseMateColors.forest, Color(0xFF17473C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x24114E40),
+            blurRadius: 24,
+            offset: Offset(0, 11),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -20,
+            bottom: -35,
+            width: 230,
+            height: 190,
+            child: IgnorePointer(
+              child: Image.asset(
+                'assets/images/savings_illustration.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    const SizedBox.shrink(),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(23),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.south_west_rounded,
+                      color: ExpenseMateColors.lime,
+                      size: 17,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        'TOTAL SPENT - $monthName',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFFD1E5D8),
+                          fontSize: 11,
+                          letterSpacing: 1.0,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    formatPeso(total),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 37,
+                      letterSpacing: -1.1,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'A little clarity goes a long way.',
+                  style: TextStyle(color: Color(0xFFC8DDD0), fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickStatCard extends StatelessWidget {
+  const _QuickStatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.tint,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    return SurfaceCard(
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: tint,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(icon, color: ExpenseMateColors.forest, size: 18),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            label,
+            style: const TextStyle(
+              color: ExpenseMateColors.muted,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: ExpenseMateColors.ink,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryGrid extends StatelessWidget {
+  const _CategoryGrid({
+    required this.expenses,
+    required this.columns,
+    required this.onTap,
+  });
+
+  final List<Expense> expenses;
+  final int columns;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = ExpenseCategory.all
+        .map(
+          (category) => (
+            category: category,
+            spent: totalOf(
+              expenses.where((expense) => expense.category == category.name),
+            ),
+          ),
+        )
+        .where((row) => row.spent > 0)
+        .toList();
+
+    if (rows.isEmpty) {
+      return SurfaceCard(
+        child: EmptyExpenses(
+          message: 'Add an expense to see your category totals.',
+        ),
+      );
+    }
+
+    return GridView.builder(
+      itemCount: rows.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
+        mainAxisSpacing: 11,
+        crossAxisSpacing: 11,
+        mainAxisExtent: 116,
+      ),
+      itemBuilder: (context, index) {
+        final category = rows[index].category;
+        final spent = rows[index].spent;
+        final progress = (spent / category.monthlyBudget).clamp(0.0, 1.0);
+        return Material(
+          color: ExpenseMateColors.white,
+          borderRadius: BorderRadius.circular(19),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(19),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(19),
+                border: Border.all(color: ExpenseMateColors.line),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CategoryIcon(category: category, size: 34),
+                      const Spacer(),
+                      Text(
+                        '${(progress * 100).round()}%',
+                        style: const TextStyle(
+                          color: ExpenseMateColors.muted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    category.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: ExpenseMateColors.muted,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    formatPeso(spent),
+                    style: const TextStyle(
+                      color: ExpenseMateColors.ink,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TipCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9F2E9),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Row(
+        children: [
+          Icon(
+            Icons.lightbulb_outline_rounded,
+            color: ExpenseMateColors.forest,
+            size: 21,
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Small check-ins today make bigger money goals easier tomorrow.',
+              style: TextStyle(
+                color: ExpenseMateColors.ink,
+                height: 1.45,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
