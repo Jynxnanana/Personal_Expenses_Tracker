@@ -67,6 +67,7 @@ jobs:
           gh release create "$release_tag" \
             "$release_apk" \
             "$release_apk.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
             --title "CHCCI ExpenseMate Android APK (build ${GITHUB_RUN_NUMBER})" \
             --notes "Android APK built from commit ${GITHUB_SHA}. Download the APK below and install it on your Android device." \
             --target "$GITHUB_SHA" \
