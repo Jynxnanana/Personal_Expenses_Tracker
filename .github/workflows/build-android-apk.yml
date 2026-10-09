@@ -17,6 +17,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Check out project
         uses: actions/checkout@v6
@@ -41,3 +43,31 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 14
+
+
+  publish-release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download built APK
+        uses: actions/download-artifact@v4
+        with:
+          name: CHCCI-ExpenseMate-Android-APK
+
+      - name: Publish APK download release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release_apk="CHCCI-ExpenseMate-Android.apk"
+          cp "app-release.apk" "$release_apk"
+          sha256sum "$release_apk" > "$release_apk.sha256"
+          release_tag="expensemate-build-${GITHUB_RUN_NUMBER}"
+          gh release create "$release_tag" \
+            "$release_apk" \
+            "$release_apk.sha256" \
+            --title "CHCCI ExpenseMate Android APK (build ${GITHUB_RUN_NUMBER})" \
+            --notes "Android APK built from commit ${GITHUB_SHA}. Download the APK below and install it on your Android device." \
+            --target "$GITHUB_SHA" \
+            --latest

@@ -43,7 +43,7 @@ The Android APK is generated at `build/app/outputs/flutter-apk/app-release.apk` 
 
 ## Download the Android APK
 
-The [latest Android APK workflow](https://github.com/Jynxnanana/Personal_Expenses_Tracker/actions/workflows/build-android-apk.yml) creates a release APK when changes are pushed to `main`. Open the newest successful run and download the `CHCCI-ExpenseMate-Android-APK` artifact. Extract the ZIP and install the APK on your Android phone. GitHub keeps workflow artifacts for 14 days.
+**[Download the latest Android APK](https://github.com/Jynxnanana/Personal_Expenses_Tracker/releases/latest/download/CHCCI-ExpenseMate-Android.apk)**. Each successful Android build also creates a GitHub Release with the APK and its SHA-256 checksum. Open the [Releases page](https://github.com/Jynxnanana/Personal_Expenses_Tracker/releases) to view older builds.
 
 ## Demo flow
 
