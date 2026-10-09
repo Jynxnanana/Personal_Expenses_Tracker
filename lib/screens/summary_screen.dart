@@ -14,6 +14,7 @@ class SummaryScreen extends StatefulWidget {
     required this.onEditExpense,
     required this.onDeleteExpense,
     required this.onRepeatExpense,
+    required this.onBack,
   });
 
   final List<Expense> expenses;
@@ -21,6 +22,7 @@ class SummaryScreen extends StatefulWidget {
   final Future<void> Function(Expense expense) onEditExpense;
   final Future<void> Function(Expense expense) onDeleteExpense;
   final Future<void> Function(Expense expense) onRepeatExpense;
+  final VoidCallback onBack;
 
   @override
   State<SummaryScreen> createState() => _SummaryScreenState();
@@ -70,7 +72,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
         ),
         leading: IconButton(
           tooltip: 'Go back',
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: widget.onBack,
           icon: const Icon(Icons.arrow_back_rounded),
         ),
         actions: [

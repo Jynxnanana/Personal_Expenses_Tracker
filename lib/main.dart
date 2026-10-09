@@ -1,12 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import 'data/local_store.dart';
 import 'models/expense.dart';
 import 'screens/add_expense_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/savings_goals_screen.dart';
+import 'screens/app_shell.dart';
 import 'screens/settings_screen.dart';
-import 'screens/summary_screen.dart';
-import 'screens/transaction_history_screen.dart';
 import 'theme.dart';
 
 void main() {
@@ -27,9 +27,75 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   ThemeMode _themeMode = ThemeMode.system;
   double _monthlyBudget = 10000;
+  bool _isReady = false;
+  Future<void> _saveQueue = Future<void>.value();
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_restoreData());
+  }
+
+  Future<void> _restoreData() async {
+    final saved = await loadSavedData();
+    if (saved != null) {
+      final transactions = saved['transactions'];
+      if (transactions is List) {
+        for (final value in transactions) {
+          try {
+            if (value is Map) {
+              _transactions.add(
+                Expense.fromJson(Map<String, Object?>.from(value)),
+              );
+            }
+          } on Object {
+            continue;
+          }
+        }
+      }
+      final goals = saved['goals'];
+      if (goals is List) {
+        _goals = [
+          for (final value in goals)
+            if (value is Map) tryParseGoal(Map<String, Object?>.from(value)),
+        ].whereType<SavingsGoal>().toList();
+      }
+      final budget = saved['monthlyBudget'];
+      if (budget is num && budget.isFinite && budget > 0) {
+        _monthlyBudget = budget.toDouble();
+      }
+      _themeMode = switch (saved['themeMode']) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        _ => ThemeMode.system,
+      };
+    }
+    if (mounted) setState(() => _isReady = true);
+  }
+
+  Future<void> _persistData() {
+    final snapshot = <String, Object?>{
+      'transactions': _transactions
+          .map((transaction) => transaction.toJson())
+          .toList(),
+      'goals': _goals.map((goal) => goal.toJson()).toList(),
+      'monthlyBudget': _monthlyBudget,
+      'themeMode': _themeMode.name,
+    };
+    _saveQueue = _saveQueue
+        .catchError((Object _) {})
+        .then((_) => saveData(snapshot));
+    return _saveQueue;
+  }
+
+  void _updateGoals(List<SavingsGoal> goals) {
+    setState(() => _goals = goals);
+    unawaited(_persistData());
+  }
 
   void _setThemeMode(ThemeMode mode) {
     setState(() => _themeMode = mode);
+    unawaited(_persistData());
   }
 
   void _openSettings() {
@@ -62,6 +128,7 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
           if (index != -1) _transactions[index] = transaction;
         }
       });
+      await _persistData();
       _messengerKey.currentState?.showSnackBar(
         SnackBar(
           content: Text(
@@ -94,6 +161,7 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
     );
     if (shouldDelete != true || !mounted) return;
     setState(() => _transactions.remove(transaction));
+    await _persistData();
     _messengerKey.currentState?.showSnackBar(
       SnackBar(content: Text('${transaction.title} deleted.')),
     );
@@ -115,100 +183,28 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
         ),
       );
     });
+    await _persistData();
     _messengerKey.currentState?.showSnackBar(
       SnackBar(content: Text('${transaction.title} added for this month.')),
     );
   }
 
-  Future<void> _editMonthlyBudget() async {
-    final controller = TextEditingController(
-      text: _monthlyBudget.toStringAsFixed(2),
-    );
-    final formKey = GlobalKey<FormState>();
-    final budget = await showDialog<double>(
-      context: _navigatorKey.currentContext!,
-      builder: (context) => AlertDialog(
-        title: const Text('Monthly budget'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Budget amount',
-              prefixText: '\u20B1  ',
-            ),
-            validator: (value) {
-              final amount = double.tryParse(value?.trim() ?? '');
-              return amount == null || !amount.isFinite || amount <= 0
-                  ? 'Enter a budget above zero.'
-                  : null;
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              final value = double.parse(controller.text.trim());
-              Navigator.pop(context, value);
-            },
-            child: const Text('Save budget'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (budget != null && mounted) setState(() => _monthlyBudget = budget);
-  }
-
-  void _openHistory() {
-    _navigatorKey.currentState!.push<void>(
-      MaterialPageRoute(
-        builder: (_) => TransactionHistoryScreen(
-          transactions: _transactions,
-          onEdit: (transaction) =>
-              _openTransactionForm(transaction.type, transaction),
-          onDelete: _deleteTransaction,
-          onRepeat: _addRecurringOccurrence,
-        ),
-      ),
-    );
-  }
-
-  void _openSummary() {
-    _navigatorKey.currentState!.push<void>(
-      MaterialPageRoute(
-        builder: (_) => SummaryScreen(
-          expenses: _transactions,
-          monthlyBudget: _monthlyBudget,
-          onEditExpense: (transaction) =>
-              _openTransactionForm(transaction.type, transaction),
-          onDeleteExpense: _deleteTransaction,
-          onRepeatExpense: _addRecurringOccurrence,
-        ),
-      ),
-    );
-  }
-
-  void _openSavingsGoals() {
-    _navigatorKey.currentState!.push<void>(
-      MaterialPageRoute(
-        builder: (_) => SavingsGoalsScreen(
-          goals: _goals,
-          onGoalsChanged: (goals) => setState(() => _goals = goals),
-        ),
-      ),
-    );
+  void _saveMonthlyBudget(double budget) {
+    _monthlyBudget = budget;
+    unawaited(_persistData());
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_isReady) {
+      return MaterialApp(
+        title: 'CHCCI ExpenseMate',
+        debugShowCheckedModeBanner: false,
+        theme: ExpenseMateTheme.theme,
+        darkTheme: ExpenseMateTheme.darkTheme,
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
+    }
     return MaterialApp(
       title: 'CHCCI ExpenseMate',
       debugShowCheckedModeBanner: false,
@@ -217,21 +213,28 @@ class _ExpenseMateAppState extends State<ExpenseMateApp> {
       themeMode: _themeMode,
       navigatorKey: _navigatorKey,
       scaffoldMessengerKey: _messengerKey,
-      home: HomeScreen(
-        expenses: _transactions,
+      home: ExpenseMateShell(
+        transactions: _transactions,
+        goals: _goals,
         monthlyBudget: _monthlyBudget,
         onAddExpense: () => _openTransactionForm(TransactionType.expense),
         onAddIncome: () => _openTransactionForm(TransactionType.income),
-        onEditExpense: (transaction) =>
+        onEditTransaction: (transaction) =>
             _openTransactionForm(transaction.type, transaction),
-        onDeleteExpense: _deleteTransaction,
-        onViewSummary: _openSummary,
+        onDeleteTransaction: _deleteTransaction,
+        onRepeatTransaction: _addRecurringOccurrence,
+        onEditBudget: _saveMonthlyBudget,
+        onGoalsChanged: _updateGoals,
         onOpenSettings: _openSettings,
-        onOpenHistory: _openHistory,
-        onOpenGoals: _openSavingsGoals,
-        onEditBudget: _editMonthlyBudget,
-        onRepeatExpense: _addRecurringOccurrence,
       ),
     );
+  }
+}
+
+SavingsGoal? tryParseGoal(Map<String, Object?> json) {
+  try {
+    return SavingsGoal.fromJson(json);
+  } on Object {
+    return null;
   }
 }

@@ -26,6 +26,31 @@ class Expense {
   final bool isRecurring;
 
   bool get isIncome => type == TransactionType.income;
+
+  Map<String, Object?> toJson() => {
+    'title': title,
+    'category': category,
+    'amount': amount,
+    'date': date.toIso8601String(),
+    'type': type.name,
+    'paymentMethod': paymentMethod,
+    'notes': notes,
+    'isRecurring': isRecurring,
+  };
+
+  factory Expense.fromJson(Map<String, Object?> json) => Expense(
+    title: json['title'] as String,
+    category: json['category'] as String,
+    amount: (json['amount'] as num).toDouble(),
+    date: DateTime.parse(json['date'] as String),
+    type: TransactionType.values.firstWhere(
+      (type) => type.name == json['type'],
+      orElse: () => TransactionType.expense,
+    ),
+    paymentMethod: json['paymentMethod'] as String? ?? 'Cash',
+    notes: json['notes'] as String? ?? '',
+    isRecurring: json['isRecurring'] as bool? ?? false,
+  );
 }
 
 class SavingsGoal {
@@ -41,6 +66,18 @@ class SavingsGoal {
 
   SavingsGoal copyWith({double? saved}) =>
       SavingsGoal(title: title, target: target, saved: saved ?? this.saved);
+
+  Map<String, Object?> toJson() => {
+    'title': title,
+    'target': target,
+    'saved': saved,
+  };
+
+  factory SavingsGoal.fromJson(Map<String, Object?> json) => SavingsGoal(
+    title: json['title'] as String,
+    target: (json['target'] as num).toDouble(),
+    saved: (json['saved'] as num? ?? 0).toDouble(),
+  );
 }
 
 class ExpenseCategory {

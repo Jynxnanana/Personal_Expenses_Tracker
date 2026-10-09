@@ -105,7 +105,7 @@ class SettingsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 14),
                           Text(
-                            'This choice lasts for the current app session.',
+                            'Your appearance choice is saved on this device.',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: colors.onSurfaceVariant),
                           ),
@@ -133,7 +133,7 @@ class SettingsScreen extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Your expense records are also temporary. They clear when you close the app.',
+                              'Your transactions, budget, goals, and appearance are saved on this device and remain after you close the app.',
                               style: TextStyle(
                                 color: colors.onSecondaryContainer,
                                 height: 1.45,

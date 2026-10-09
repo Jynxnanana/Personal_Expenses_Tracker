@@ -14,10 +14,8 @@ class HomeScreen extends StatelessWidget {
     required this.onEditExpense,
     required this.onDeleteExpense,
     required this.onRepeatExpense,
-    required this.onViewSummary,
+    required this.onNavigateToTab,
     required this.onOpenSettings,
-    required this.onOpenHistory,
-    required this.onOpenGoals,
     required this.onEditBudget,
   });
 
@@ -28,11 +26,9 @@ class HomeScreen extends StatelessWidget {
   final Future<void> Function(Expense expense) onEditExpense;
   final Future<void> Function(Expense expense) onDeleteExpense;
   final Future<void> Function(Expense expense) onRepeatExpense;
-  final VoidCallback onViewSummary;
+  final ValueChanged<int> onNavigateToTab;
   final VoidCallback onOpenSettings;
-  final VoidCallback onOpenHistory;
-  final VoidCallback onOpenGoals;
-  final VoidCallback onEditBudget;
+  final ValueChanged<double> onEditBudget;
 
   List<Expense> get _thisMonth => expenses.where((expense) {
     final now = DateTime.now();
@@ -59,44 +55,6 @@ class HomeScreen extends StatelessWidget {
     final dayLabel = _dateLabel(DateTime.now());
 
     return Scaffold(
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (index) {
-          switch (index) {
-            case 1:
-              onOpenHistory();
-              return;
-            case 2:
-              onViewSummary();
-              return;
-            case 3:
-              onOpenGoals();
-              return;
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long_rounded),
-            label: 'History',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart_rounded),
-            label: 'Reports',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.flag_outlined),
-            selectedIcon: Icon(Icons.flag_rounded),
-            label: 'Goals',
-          ),
-        ],
-      ),
       appBar: AppBar(
         toolbarHeight: 72,
         titleSpacing: 20,
@@ -139,7 +97,7 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.only(right: 16),
             child: IconButton.filledTonal(
               tooltip: 'View spending summary',
-              onPressed: onViewSummary,
+              onPressed: () => onNavigateToTab(2),
               style: IconButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -266,13 +224,13 @@ class HomeScreen extends StatelessWidget {
                   _MonthlyBudgetCard(
                     spent: monthTotal,
                     budget: monthlyBudget,
-                    onEdit: onEditBudget,
+                    onSave: onEditBudget,
                   ),
                   const SizedBox(height: 12),
                   Align(
                     alignment: Alignment.centerRight,
                     child: OutlinedButton.icon(
-                      onPressed: onOpenGoals,
+                      onPressed: () => onNavigateToTab(3),
                       icon: const Icon(Icons.flag_outlined),
                       label: const Text('Savings goals'),
                     ),
@@ -281,19 +239,19 @@ class HomeScreen extends StatelessWidget {
                   SectionHeading(
                     title: 'Spending categories',
                     actionLabel: 'See summary',
-                    onAction: onViewSummary,
+                    onAction: () => onNavigateToTab(2),
                   ),
                   const SizedBox(height: 10),
                   _CategoryGrid(
                     expenses: monthExpenses,
                     columns: columns,
-                    onTap: onViewSummary,
+                    onTap: () => onNavigateToTab(2),
                   ),
                   const SizedBox(height: 28),
                   SectionHeading(
                     title: 'Recent transactions',
                     actionLabel: 'View all',
-                    onAction: onOpenHistory,
+                    onAction: () => onNavigateToTab(1),
                   ),
                   const SizedBox(height: 9),
                   SurfaceCard(
@@ -509,21 +467,85 @@ class _HeroAmount extends StatelessWidget {
   );
 }
 
-class _MonthlyBudgetCard extends StatelessWidget {
+class _MonthlyBudgetCard extends StatefulWidget {
   const _MonthlyBudgetCard({
     required this.spent,
     required this.budget,
-    required this.onEdit,
+    required this.onSave,
   });
 
   final double spent;
   final double budget;
-  final VoidCallback onEdit;
+  final ValueChanged<double> onSave;
+
+  @override
+  State<_MonthlyBudgetCard> createState() => _MonthlyBudgetCardState();
+}
+
+class _MonthlyBudgetCardState extends State<_MonthlyBudgetCard> {
+  late double _budget;
+
+  @override
+  void initState() {
+    super.initState();
+    _budget = widget.budget;
+  }
+
+  Future<void> _editBudget() async {
+    var amountText = _budget.toStringAsFixed(2);
+    String? errorText;
+    final budget = await showDialog<double>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Monthly budget'),
+          content: TextField(
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (value) {
+              amountText = value;
+              if (errorText != null) {
+                setDialogState(() => errorText = null);
+              }
+            },
+            decoration: InputDecoration(
+              labelText: 'Budget amount',
+              prefixText: '\u20B1  ',
+              errorText: errorText,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final value = double.tryParse(amountText.trim());
+                if (value == null || !value.isFinite || value <= 0) {
+                  setDialogState(
+                    () => errorText = 'Enter an amount above zero.',
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext, value);
+              },
+              child: const Text('Save budget'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (budget == null || !mounted) return;
+    setState(() => _budget = budget);
+    widget.onSave(budget);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final remaining = (budget - spent).clamp(0, double.infinity).toDouble();
-    final progress = (spent / budget).clamp(0.0, 1.0);
+    final spent = widget.spent;
+    final remaining = (_budget - spent).clamp(0, double.infinity).toDouble();
+    final progress = (spent / _budget).clamp(0.0, 1.0);
     final colors = Theme.of(context).colorScheme;
     return SurfaceCard(
       padding: const EdgeInsets.all(17),
@@ -539,14 +561,14 @@ class _MonthlyBudgetCard extends StatelessWidget {
                 ),
               ),
               TextButton.icon(
-                onPressed: onEdit,
+                onPressed: _editBudget,
                 icon: const Icon(Icons.edit_outlined, size: 17),
                 label: const Text('Set limit'),
               ),
             ],
           ),
           Text(
-            '${formatPeso(spent)} of ${formatPeso(budget)} used',
+            '${formatPeso(spent)} of ${formatPeso(_budget)} used',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 10),
@@ -557,17 +579,17 @@ class _MonthlyBudgetCard extends StatelessWidget {
               value: progress,
               backgroundColor: colors.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation(
-                spent > budget ? colors.error : colors.primary,
+                spent > _budget ? colors.error : colors.primary,
               ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            spent > budget
-                ? '${formatPeso(spent - budget)} over budget'
+            spent > _budget
+                ? '${formatPeso(spent - _budget)} over budget'
                 : '${formatPeso(remaining)} remaining',
             style: TextStyle(
-              color: spent > budget ? colors.error : colors.onSurfaceVariant,
+              color: spent > _budget ? colors.error : colors.onSurfaceVariant,
               fontWeight: FontWeight.w600,
               fontSize: 12,
             ),

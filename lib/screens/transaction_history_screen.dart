@@ -10,12 +10,14 @@ class TransactionHistoryScreen extends StatefulWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onRepeat,
+    required this.onBack,
   });
 
   final List<Expense> transactions;
   final Future<void> Function(Expense transaction) onEdit;
   final Future<void> Function(Expense transaction) onDelete;
   final Future<void> Function(Expense transaction) onRepeat;
+  final VoidCallback onBack;
 
   @override
   State<TransactionHistoryScreen> createState() =>
@@ -93,7 +95,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         ),
         leading: IconButton(
           tooltip: 'Go back',
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: widget.onBack,
           icon: const Icon(Icons.arrow_back_rounded),
         ),
       ),

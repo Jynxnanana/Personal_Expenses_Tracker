@@ -8,10 +8,12 @@ class SavingsGoalsScreen extends StatefulWidget {
     super.key,
     required this.goals,
     required this.onGoalsChanged,
+    required this.onBack,
   });
 
   final List<SavingsGoal> goals;
   final ValueChanged<List<SavingsGoal>> onGoalsChanged;
+  final VoidCallback onBack;
 
   @override
   State<SavingsGoalsScreen> createState() => _SavingsGoalsScreenState();
@@ -65,7 +67,7 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
         ),
         leading: IconButton(
           tooltip: 'Go back',
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: widget.onBack,
           icon: const Icon(Icons.arrow_back_rounded),
         ),
         actions: [
@@ -211,8 +213,7 @@ class _AddContributionDialog extends StatefulWidget {
   final String goalTitle;
 
   @override
-  State<_AddContributionDialog> createState() =>
-      _AddContributionDialogState();
+  State<_AddContributionDialog> createState() => _AddContributionDialogState();
 }
 
 class _AddContributionDialogState extends State<_AddContributionDialog> {
