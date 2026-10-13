@@ -4,7 +4,7 @@
 
 CHCCI ExpenseMate is a Flutter personal finance tracker for the CSE101 final project. Users can record income and expenses, manage a monthly budget and savings goals, and review searchable transaction history and spending reports.
 
-Expense records are edited in Dart `List` objects and saved locally as JSON when the app changes. Android uses an app-private file; Flutter Web uses browser local storage. The app uses no database and sends no records to a server.
+All transactions, goals, budget, and appearance settings are held in Dart runtime memory only. They reset when the app closes, as required for this project. The app uses no database, file storage, browser storage, or server.
 
 ## Features
 
@@ -17,12 +17,12 @@ Expense records are edited in Dart `List` objects and saved locally as JSON when
 - Mark regular expenses as recurring and manually add a monthly occurrence.
 - Navigate between the dashboard, transaction form, history, summary, savings goals, and settings.
 - Responsive phone and wide-screen layouts; System, Light, and Dark appearance options.
-- Transactions, monthly budget, savings goals, and appearance are saved locally and restored after reopening. No database or extra package is used.
+- Transactions, monthly budget, savings goals, and appearance are temporary runtime data and reset when the app closes. No database or device storage is used.
 - Philippine peso amounts and locally bundled artwork.
 
 ## Screenshots
 
-Capture the Home, Add Transaction, Summary, and wide-screen views from the running app for the final screenshot set.
+Capture Home, Add Transaction, Summary, and a narrow phone-width view from the running app. Save them in `screenshots` as `home.png`, `add-expense.png`, `summary.png`, and `responsive.png`.
 
 ## Run and build
 
@@ -33,7 +33,7 @@ flutter test
 flutter build apk --release
 ```
 
-For Flutter Web, use the same port each time so the browser reopens the same local storage:
+To preview the responsive layout in Flutter Web:
 
 ```powershell
 flutter run -d edge --web-port 54168
