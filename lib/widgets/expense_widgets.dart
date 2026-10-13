@@ -10,17 +10,17 @@ class BrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: ExpenseMateColors.forest,
-        borderRadius: BorderRadius.circular(size * .32),
-      ),
-      child: Icon(
-        Icons.account_balance_wallet_rounded,
-        size: size * .55,
-        color: ExpenseMateColors.lime,
+    return Semantics(
+      image: true,
+      label: 'CHCCI ExpenseMate logo',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * .28),
+        child: Image.asset(
+          'assets/images/chcci_expensemate_logo.png',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }
