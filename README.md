@@ -22,11 +22,31 @@ All transactions, goals, budget, and appearance settings are held in Dart runtim
 
 ## Screenshots
 
-### Home screen
+The screenshots below are from the submitted project documentation. Select an image to view it at full size.
 
-<img src="screenshots/home.png" alt="CHCCI ExpenseMate home screen" width="360">
+### Phone screens
 
-The repository currently includes the Home screenshot. To complete the CSE101 screenshot requirement, add captures of the Add Transaction form, Summary, and a narrow responsive phone view to `screenshots` as `add-expense.png`, `summary.png`, and `responsive.png`.
+| Home | Transaction history |
+| --- | --- |
+| <img src="screenshots/home.jpg" alt="ExpenseMate home screen" width="300"> | <img src="screenshots/history.jpg" alt="Transaction history screen" width="300"> |
+
+| Spending summary | Savings goals |
+| --- | --- |
+| <img src="screenshots/summary.jpg" alt="Spending summary screen" width="300"> | <img src="screenshots/goals.jpg" alt="Savings goals screen" width="300"> |
+
+| Add expense and income | Settings |
+| --- | --- |
+| <img src="screenshots/add-expense.jpg" alt="Add expense and income form" width="300"> | <img src="screenshots/settings.jpg" alt="Settings screen" width="300"> |
+
+### Tablet layout (responsive)
+
+| Home | Spending summary |
+| --- | --- |
+| <img src="screenshots/tablet-home.jpg" alt="ExpenseMate home screen on a tablet" width="600"> | <img src="screenshots/tablet-summary.jpg" alt="Spending summary on a tablet" width="600"> |
+
+| Transaction history | Savings goals |
+| --- | --- |
+| <img src="screenshots/tablet-history.jpg" alt="Transaction history on a tablet" width="600"> | <img src="screenshots/tablet-goals.jpg" alt="Savings goals on a tablet" width="600"> |
 
 ## Run and build
 
