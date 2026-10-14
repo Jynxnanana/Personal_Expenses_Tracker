@@ -22,7 +22,11 @@ All transactions, goals, budget, and appearance settings are held in Dart runtim
 
 ## Screenshots
 
-Capture Home, Add Transaction, Summary, and a narrow phone-width view from the running app. Save them in `screenshots` as `home.png`, `add-expense.png`, `summary.png`, and `responsive.png`.
+### Home screen
+
+<img src="screenshots/home.png" alt="CHCCI ExpenseMate home screen" width="360">
+
+The repository currently includes the Home screenshot. To complete the CSE101 screenshot requirement, add captures of the Add Transaction form, Summary, and a narrow responsive phone view to `screenshots` as `add-expense.png`, `summary.png`, and `responsive.png`.
 
 ## Run and build
 
